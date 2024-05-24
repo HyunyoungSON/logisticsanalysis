@@ -1,0 +1,20 @@
+# 새로운 데이터 (Plant와 Plant명을 포함하는 데이터프레임)
+plant_data = pd.DataFrame({
+    'Plnt': [1110, 1120, 1130, 1161, 1162, 1164, 1165, 1166, 1167, 1168, 1169, 1170, 1171, 1172, 1175],
+    'Plant명': ['광주공장', '곡성공장', '평택공장', '평택물류', '김포물류', '군포물류', '남양주물류', '청원물류', '원주물류', '양산물류', '울산물류', '칠곡물류', '장성물류', '제주물류', '이천물류']
+})
+
+# 데이터 병합 (left join)
+merged_data = pd.merge(data, plant_data, on='Plnt', how='left')
+
+pivot_table = merged_data.pivot_table(
+    values='절대값',
+    index=['Plnt','Plant명','대분류'],
+    aggfunc=['sum', 'count']
+).reset_index()
+
+# 컬럼명 변경
+pivot_table.columns = ['Plnt', 'Plant명','대분류', '절대값 합계', 'row 갯수']
+
+# 결과 확인
+print(pivot_table)
