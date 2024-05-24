@@ -1,0 +1,27 @@
+import os
+import pandas as pd
+
+# 폴더 경로 설정
+folder_path = r"C:\Users\LogisALL\Desktop\tmsdata\gumho\data"
+
+# 모든 엑셀 파일 목록 가져오기
+excel_files = [file for file in os.listdir(folder_path) if file.endswith('.xlsx')]
+
+# 데이터프레임 리스트 초기화
+df_list = []
+
+# 각 엑셀 파일 불러오기
+for file in excel_files:
+    file_path = os.path.join(folder_path, file)
+    df = pd.read_excel(file_path, skiprows=2)  # 세 번째 행부터 시작하도록 설정 (index=2가 세 번째 행을 의미)
+    print(f"Data from {file}:\n")  # 각 파일의 데이터 출력
+    df_list.append(df)
+
+# 모든 데이터프레임 병합
+merged_df = pd.concat(df_list, ignore_index=True)
+
+# 병합된 데이터프레임 출력
+print("Merged Data:\n")
+
+# 병합된 데이터프레임을 엑셀 파일로 저장 (필요시 사용)
+# merged_df.to_excel('merged_data.xlsx', index=False)
