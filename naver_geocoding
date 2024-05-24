@@ -22,3 +22,17 @@ def geocode_address(address, client_id, client_secret):
     else:
         print("Error:", response.status_code)
         return None, None
+
+
+
+
+# Excel 파일 불러오기
+file_path = 'C:\\Users\\LogisALL\\Desktop\\tmsdata\\geocode.xlsx'
+data = pd.read_excel(file_path)
+
+# Geocoding
+data['longitude'], data['latitude'] = zip(*data['주소'].apply(geocode_address, args=(client_id, client_secret)))
+
+# 변환된 데이터를 새로운 Excel 파일로 저장
+data.to_excel(file_path, index=False)
+print(data)
