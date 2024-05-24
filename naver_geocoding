@@ -1,0 +1,24 @@
+import pandas as pd
+import requests
+
+# 네이버 API 인증 정보
+client_id = '6cr0vdavrj'
+client_secret = 'fYl96PlZm1egIjCVydqKFmZ9uGyAMkc3cIBHccid'
+
+def geocode_address(address, client_id, client_secret):
+    headers = {
+        'X-NCP-APIGW-API-KEY-ID': client_id,
+        'X-NCP-APIGW-API-KEY': client_secret
+    }
+    params = {'query': address}
+    response = requests.get("https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode", headers=headers, params=params)
+    
+    if response.status_code == 200:
+        response_body = response.json()
+        if response_body['addresses']:
+            return response_body['addresses'][0]['x'], response_body['addresses'][0]['y']
+        else:
+            return None, None
+    else:
+        print("Error:", response.status_code)
+        return None, None
