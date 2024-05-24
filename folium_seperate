@@ -1,0 +1,100 @@
+import pandas as pd
+import folium
+
+# 파일 경로
+file_path = 'C:\\Users\\LogisALL\\Desktop\\tmsdata\\gumho\\plnt_1172.xlsx'
+
+# 엑셀 파일 불러오기
+data = pd.read_excel(file_path)
+
+# NaN 값 제거
+data = data.dropna(subset=['도착위도', '도착경도'])
+
+# 지도 생성 (초기 중심을 대한민국으로 설정)
+map_center = [36.5, 127.5]  # 대한민국 중심 좌표
+map_folium = folium.Map(location=map_center, zoom_start=7)
+
+# 데이터프레임에서 '도착위도', '도착경도' 및 row 수를 기반으로 지도에 원 추가
+for idx, row in data.iterrows():
+    latitude = row['도착경도']
+    longitude = row['도착위도']
+    radius = 10  # 기본 반지름, 필요에 따라 조정 가능
+    folium.Circle(
+        location=[latitude, longitude],
+        radius=radius,
+        color='blue',
+        fill=True,
+        fill_color='blue'
+    ).add_to(map_folium)
+
+# 결과 지도 저장
+output_map_path = 'C:\\Users\\LogisALL\\Desktop\\tmsdata\\gumho\\map_1172.html'
+map_folium.save(output_map_path)
+
+print(f"Map has been saved to {output_map_path}")
+#######################################################################################3
+
+# "대분류" 컬럼에서 "출고"만 필터링
+data = data[data['대분류'] == '출고']
+
+# NaN 값 제거
+data = data.dropna(subset=['출발위도', '출발경도', '도착위도', '도착경도', '     수량'])
+
+# Plnt 컬럼의 고유한 값 추출
+unique_plnts = data['Plnt'].unique()
+
+# 각 Plnt 값에 대해 명확히 구분되는 색상 지정
+predefined_colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF']  # 빨강, 초록, 파랑, 노랑, 자홍
+colors = {plnt: predefined_colors[i % len(predefined_colors)] for i, plnt in enumerate(unique_plnts)}
+
+# 각 Plnt별로 지도 생성
+output_dir = 'C:\\Users\\LogisALL\\Desktop\\tmsdata\\gumho\\maps'
+os.makedirs(output_dir, exist_ok=True)
+
+for plnt in unique_plnts:
+    # 지도 생성 (초기 중심을 대한민국으로 설정)
+    map_center = [36.5, 127.5]  # 대한민국 중심 좌표
+    map_folium = folium.Map(location=map_center, zoom_start=7, tiles='CartoDB positron')
+
+    plnt_data = data[data['Plnt'] == plnt]
+    unique_starts = plnt_data[['출발지', '출발지명', '출발위도', '출발경도']].drop_duplicates()
+    unique_ends = plnt_data.groupby(['출발지명','영업부문','도착지', '도착지명', '도착위도', '도착경도']).agg({'     수량': 'sum'}).reset_index()
+
+    color = colors[plnt]
+
+    for idx, row in unique_starts.iterrows():
+        folium.Marker(
+            location=[row['출발경도'], row['출발위도']],
+            icon=folium.Icon(color='white', icon_color=color, icon='glyphicon glyphicon-stop'),
+            popup=f"""
+            <table>
+                <tr><th>출발지명:</th><td>{row['출발지명']}</td></tr>
+                <tr><th>Plnt:</th><td>{plnt}</td></tr>
+            </table>
+            """
+        ).add_to(map_folium)
+
+    for idx, row in unique_ends.iterrows():
+        radius = row['     수량'] * -0.5  # 수량 합계에 따른 반지름 조정
+        folium.Circle(
+            location=[row['도착경도'], row['도착위도']],
+            radius=radius,
+            color=color,
+            fill=True,
+            fill_color=color,
+            fill_opacity=0.6,
+            popup=folium.Popup(html=f"""
+            <table>
+                <tr><th>도착지명:</th><td>{row['도착지명']}</td></tr>
+                <tr><th>출고지:</th><td>{row['출발지명']}</td></tr>
+                <tr><th>영업부문:</th><td>{row['영업부문']}</td></tr>
+                <tr><th>수량 합계:</th><td>{row['     수량']}</td></tr>
+            </table>
+            """, max_width=300)
+        ).add_to(map_folium)
+
+    # 결과 지도 저장
+    output_map_path = os.path.join(output_dir, f'map_{plnt}.html')
+    map_folium.save(output_map_path)
+
+    print(f"Map for Plnt {plnt} has been saved to {output_map_path}")
