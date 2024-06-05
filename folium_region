@@ -1,0 +1,61 @@
+import pandas as pd
+import folium
+
+# Excel 파일 불러오기
+file_path = 'C:\\Users\\LogisALL\\Desktop\\tmsdata\\address_kcp.xlsx'
+data = pd.read_excel(file_path)
+
+# NaN 값 제거
+data = data.dropna(subset=['longitude', 'latitude'])
+
+# 권역 구분 함수
+def classify_region(zip_addr):
+    if '서울' in zip_addr or '경기' in zip_addr or '인천' in zip_addr:
+        return '수도권'
+    elif '강원' in zip_addr:
+        return '강원'
+    elif '전라' in zip_addr:
+        return '전라'
+    elif '경상' in zip_addr or '부산' in zip_addr or '대구' in zip_addr or '울산' in zip_addr or '경남' in zip_addr or '경북' in zip_addr:
+        return '경상'
+    elif '충청' in zip_addr or '대전' in zip_addr or '세종' in zip_addr or '충북' in zip_addr or '충남' in zip_addr :
+        return '충청'
+    else:
+        return '기타'
+
+# 권역 컬럼 추가
+data['region'] = data['ZIP_ADDR'].apply(classify_region)
+
+# 지도 생성 (초기 중심을 대한민국으로 설정)
+map_center = [36.5, 127.5]  # 대한민국 중심 좌표
+map_folium = folium.Map(location=map_center, zoom_start=7, tiles='cartodb positron')
+
+# 권역별 색상 지정
+region_colors = {
+    '수도권': 'blue',
+    '강원': 'green',
+    '전라': 'purple',
+    '경상': 'red',
+    '충청': 'orange',
+    '기타': 'gray'
+}
+
+# 데이터프레임에서 'latitude', 'longitude' 및 'region'을 기반으로 지도에 원 추가
+for idx, row in data.iterrows():
+    latitude = row['latitude']
+    longitude = row['longitude']
+    region = row['region']
+    color = region_colors.get(region, 'gray')  # 기본 색상은 회색
+    folium.Circle(
+        location=[latitude, longitude],
+        radius=10,  # 기본 반지름, 필요에 따라 조정 가능
+        color=color,
+        fill=True,
+        fill_color=color
+    ).add_to(map_folium)
+
+# 결과 지도 저장
+output_map_path = 'C:\\Users\\LogisALL\\Desktop\\tmsdata\\map1.html'
+map_folium.save(output_map_path)
+
+print(f"Map has been saved to {output_map_path}")
